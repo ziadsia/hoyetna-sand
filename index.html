@@ -1,99 +1,249 @@
+
 <!doctype html>
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>إنشاء دعوة هويتنا سند</title>
+<title>دعوة هويتنا سند</title>
+
 <style>
-:root{--gold:#b88924;--red:#a71920;--ink:#242424}
 *{box-sizing:border-box}
-body{margin:0;background:#f5f2eb;color:var(--ink);font-family:Tahoma,Arial,sans-serif}
-main{max-width:920px;margin:24px auto;padding:18px}
-.panel{background:#fff;border:1px solid #e8dfcf;border-radius:18px;padding:20px;box-shadow:0 8px 28px #4a35100d}
-h1{margin:0 0 8px;color:#8b6418;font-size:25px}
-p{line-height:1.8;margin:6px 0 18px}
+body{margin:0;background:#f5f2eb;color:#242424;font-family:Tahoma,Arial,sans-serif}
+main{max-width:900px;margin:22px auto;padding:16px}
+.panel{background:#fff;border:1px solid #e8dfcf;border-radius:18px;padding:20px}
+h1{color:#8b6418;font-size:24px}
+p{line-height:1.8}
 label{display:block;font-weight:bold;margin:14px 0 7px}
-input{width:100%;padding:13px;border:1px solid #cfc7b8;border-radius:10px;font:inherit;background:#fff}
+input{width:100%;padding:13px;border:1px solid #ccc;border-radius:10px;font:inherit}
 button{border:0;border-radius:11px;padding:13px 18px;font:inherit;font-weight:bold;cursor:pointer}
-.primary{background:var(--red);color:white}
-.secondary{background:#eee8dc;color:#332a1a}
+.primary{background:#a71920;color:white}
+.secondary{background:#eee8dc}
 .actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}
-.preview{margin:20px auto 0;max-width:560px;text-align:center}
-canvas{width:100%;height:auto;border-radius:14px;background:white;box-shadow:0 6px 24px #00000016}
+.preview{margin:20px auto;max-width:560px}
+canvas{display:block;width:100%;height:auto;border-radius:14px}
 .note{font-size:13px;color:#655d50}
-@media(max-width:600px){main{margin:8px auto;padding:10px}.panel{padding:15px}h1{font-size:21px}}
+@media(max-width:600px){
+main{padding:10px}
+.panel{padding:15px}
+h1{font-size:21px}
+}
 </style>
 </head>
+
 <body>
 <main>
+
 <section class="panel">
 <h1>دعوة حضور مبادرة «هويتنا سند»</h1>
-<p>اكتب اسمك وارفع صورتك، وسيتم تجهيز الدعوة تلقائيًا. بعد المعاينة اضغط «تحميل الدعوة».</p>
-<label for="personName">الاسم</label>
-<input id="personName" maxlength="45" placeholder="اكتب الاسم كما تريد ظهوره">
-<label for="personPhoto">الصورة الشخصية</label>
+
+<p>اكتب اسمك وارفع صورتك، وستظهر مباشرة داخل إطار الصورة في الدعوة.</p>
+
+<label>الاسم</label>
+<input id="personName" maxlength="45" placeholder="اكتب اسمك">
+
+<label>الصورة الشخصية</label>
 <input id="personPhoto" type="file" accept="image/*">
+
 <div class="actions">
-<button class="primary" id="downloadBtn" type="button">تحميل الدعوة</button>
-<button class="secondary" id="resetBtn" type="button">إعادة ضبط</button>
+<button class="primary" id="downloadBtn">تحميل الدعوة</button>
+<button class="secondary" id="resetBtn">إعادة ضبط</button>
 </div>
-<p class="note">تتم معالجة الصورة داخل متصفحك ولا يتم رفعها إلى خادم أو حفظها لدينا.</p>
+
+<p class="note">الصورة تتم معالجتها داخل متصفحك فقط.</p>
 </section>
-<div class="preview"><canvas id="result" width="1170" height="1280" aria-label="معاينة الدعوة"></canvas></div>
+
+<div class="preview">
+<canvas id="result" aria-label="معاينة الدعوة"></canvas>
+</div>
+
 </main>
+
 <script>
-const canvas=document.getElementById('result'), ctx=canvas.getContext('2d');
-const nameInput=document.getElementById('personName'), photoInput=document.getElementById('personPhoto');
-const template=new Image(); template.src='template.png';
+const canvas=document.getElementById('result');
+const ctx=canvas.getContext('2d');
+
+const nameInput=document.getElementById('personName');
+const photoInput=document.getElementById('personPhoto');
+
+const template=new Image();
+template.src='template.png';
+
 let photo=null;
+let templateReady=false;
+
+canvas.width=1199;
+canvas.height=1312;
+
 function draw(){
-  ctx.clearRect(0,0,canvas.width,canvas.height);
-  // صورة الشخص داخل الإطار الدائري، ثم طبقة التصميم فوقها لإظهار الإطار الذهبي.
-  if(photo){
-    const cx=959, cy=540, r=164;
-    const scale=Math.max((2*r)/photo.width,(2*r)/photo.height);
-    const sw=photo.width*scale, sh=photo.height*scale;
-    ctx.save(); ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI*2); ctx.clip();
-    ctx.drawImage(photo,cx-sw/2,cy-sh/2,sw,sh); ctx.restore();
-  }
-  if(template.complete && template.naturalWidth) ctx.drawImage(template,0,0,1170,1280);
-  const name=nameInput.value.trim();
-  if(name){
-    // مساحة واضحة للاسم فوق شريط الاسم الأصلي.
-    ctx.save();
-    ctx.fillStyle='rgba(255,248,229,0.96)';
-    ctx.strokeStyle='#b88924'; ctx.lineWidth=3;
-    roundRect(ctx,817,700,296,59,15); ctx.fill(); ctx.stroke();
-    ctx.fillStyle='#251d12'; ctx.textAlign='center'; ctx.textBaseline='middle';
-    let size=34; ctx.font=`bold ${size}px Tahoma, Arial`;
-    while(ctx.measureText(name).width>270 && size>17){size-=1;ctx.font=`bold ${size}px Tahoma, Arial`;}
-    ctx.fillText(name,965,730,270); ctx.restore();
-  }
+
+ctx.clearRect(0,0,canvas.width,canvas.height);
+
+if(templateReady){
+ctx.drawImage(template,0,0,canvas.width,canvas.height);
 }
-function roundRect(c,x,y,w,h,r){
- c.beginPath(); c.moveTo(x+r,y); c.arcTo(x+w,y,x+w,y+h,r);
- c.arcTo(x+w,y+h,x,y+h,r); c.arcTo(x,y+h,x,y,r);
- c.arcTo(x,y,x+w,y,r); c.closePath();
+
+// رسم الصورة داخل الإطار الدائري
+if(photo){
+
+const cx=958;
+const cy=535;
+const r=157;
+
+const scale=Math.max(
+(2*r)/photo.width,
+(2*r)/photo.height
+);
+
+const sw=photo.width*scale;
+const sh=photo.height*scale;
+
+ctx.save();
+ctx.beginPath();
+ctx.arc(cx,cy,r,0,Math.PI*2);
+ctx.clip();
+
+ctx.drawImage(
+photo,
+cx-sw/2,
+cy-sh/2,
+sw,
+sh
+);
+
+ctx.restore();
+
+// الإطار الذهبي
+ctx.beginPath();
+ctx.arc(cx,cy,r,0,Math.PI*2);
+ctx.strokeStyle='#c28b20';
+ctx.lineWidth=5;
+ctx.stroke();
+
 }
-template.onload=draw;
-nameInput.addEventListener('input',draw);
-photoInput.addEventListener('change',()=>{
- const file=photoInput.files[0]; if(!file){photo=null;draw();return;}
- if(!file.type.startsWith('image/')){alert('من فضلك اختر ملف صورة.');return;}
- const reader=new FileReader();
- reader.onload=()=>{const img=new Image();img.onload=()=>{photo=img;draw();};img.src=reader.result;};
- reader.readAsDataURL(file);
-});
-document.getElementById('downloadBtn').addEventListener('click',()=>{
- if(!nameInput.value.trim()){alert('اكتب الاسم أولاً.');nameInput.focus();return;}
- if(!photo){alert('ارفع الصورة أولاً.');photoInput.focus();return;}
- draw();
- const a=document.createElement('a'); a.download='دعوة-هويتنا-سند.png'; a.href=canvas.toDataURL('image/png'); a.click();
-});
-document.getElementById('resetBtn').addEventListener('click',()=>{
- nameInput.value='';photoInput.value='';photo=null;draw();
-});
+
+// كتابة الاسم
+const name=nameInput.value.trim();
+
+if(name){
+
+ctx.save();
+ctx.direction='rtl';
+ctx.textAlign='center';
+ctx.textBaseline='middle';
+
+let size=34;
+ctx.font=`bold ${size}px Tahoma,Arial`;
+
+while(
+ctx.measureText(name).width>265 && size>17
+){
+size--;
+ctx.font=`bold ${size}px Tahoma,Arial`;
+}
+
+ctx.fillStyle='#2b2114';
+ctx.fillText(name,965,744,265);
+
+ctx.restore();
+}
+
+}
+
+template.onload=()=>{
+templateReady=true;
 draw();
+};
+
+template.onerror=()=>{
+alert('تعذر تحميل قالب الدعوة. تأكد من وجود template.png بجوار index.html');
+};
+
+// تحديث الاسم مباشرة
+nameInput.addEventListener('input',draw);
+
+// رفع الصورة
+photoInput.addEventListener('change',()=>{
+
+const file=photoInput.files&&photoInput.files[0];
+
+if(!file){
+photo=null;
+draw();
+return;
+}
+
+if(!file.type.startsWith('image/')){
+alert('من فضلك اختر صورة JPG أو PNG');
+photoInput.value='';
+return;
+}
+
+const reader=new FileReader();
+
+reader.onerror=()=>{
+alert('تعذر قراءة الصورة');
+};
+
+reader.onload=()=>{
+
+const img=new Image();
+
+img.onload=()=>{
+photo=img;
+draw();
+};
+
+img.onerror=()=>{
+alert('الصورة غير مدعومة');
+};
+
+img.src=reader.result;
+
+};
+
+reader.readAsDataURL(file);
+
+});
+
+// تحميل الدعوة
+document.getElementById('downloadBtn').addEventListener('click',()=>{
+
+if(!nameInput.value.trim()){
+alert('اكتب الاسم أولاً');
+nameInput.focus();
+return;
+}
+
+if(!photo){
+alert('ارفع الصورة أولاً');
+photoInput.focus();
+return;
+}
+
+if(!templateReady){
+alert('انتظر تحميل قالب الدعوة');
+return;
+}
+
+draw();
+
+const a=document.createElement('a');
+a.download='دعوة-هويتنا-سند.png';
+a.href=canvas.toDataURL('image/png');
+a.click();
+
+});
+
+// إعادة ضبط
+document.getElementById('resetBtn').addEventListener('click',()=>{
+
+nameInput.value='';
+photoInput.value='';
+photo=null;
+draw();
+
+});
+
 </script>
 </body>
 </html>
